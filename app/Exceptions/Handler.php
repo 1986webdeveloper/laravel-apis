@@ -4,7 +4,7 @@ namespace App\Exceptions;
 
 use Exception;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
-
+use App\Http\Controllers\GeneralController AS General;
 class Handler extends ExceptionHandler
 {
     /**
@@ -44,8 +44,20 @@ class Handler extends ExceptionHandler
      * @param  \Exception  $exception
      * @return \Illuminate\Http\Response
      */
-    public function render($request, Exception $exception)
-    {
+   
+      public function render($request, Exception $exception) {
+
+        if ($request->segment(1) == "api") {
+            if ($this->isHttpException($exception)) {
+                 $jsonResponse =  General::jsonResponse(0,"Sorry, the page you are looking for could not be found.",[]);
+                return $jsonResponse;
+            }
+            if ($exception instanceof \Illuminate\Database\QueryException || $exception instanceof \Symfony\Component\Debug\Exception\FatalThrowableError) {
+                 $jsonResponse =  General::jsonResponse(0,$exception->getMessage(),[]);
+                return $jsonResponse;
+            }
+        }
         return parent::render($request, $exception);
     }
+
 }

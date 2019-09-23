@@ -38,7 +38,6 @@ class ApiController extends Controller
             $returndata = DB::table($table);
             $returndata = $returndata->insert($input);
             $userdetail[] = $returndata;
-            $message = $tableName.' '.'has been added successfully.';
             $jsonResponse =  General::jsonResponse(1,$input['message'],$userdetail);
             return $jsonResponse;
 
@@ -59,7 +58,6 @@ class ApiController extends Controller
                 $i++ ;
             }
 
-            $message = $tableName.' '.'has been updated successfully.';
             $jsonResponse =  General::jsonResponse(1,$input['message'],$userdetail);
             return $jsonResponse;
 
@@ -69,60 +67,61 @@ class ApiController extends Controller
 
             $userdetail = array();
             $returndata = DB::table($table);
-
             if($request->filled('where')) {
-
                 $where = json_decode($input['where'],true);
-                foreach ($where as $key => $value) {
-                    $value = array_map('htmlentities', $value);
-                    $cond = html_entity_decode(json_encode($value,true));
-                    $returndata->where([$cond]);
-                }
+                $returndata->where($where);
+                
             }
-
+         
             if($request->filled('joins')) {
-
-                //final
                 $joins = json_decode($input['joins'],true);
                 foreach ($joins as $key => $row) {
                     $type = $row['type'];
                     $returndata->$type($row['tablename'],$row['cond1'],$row['cond2']);
+
                 }
+                
+            }
 
-                //test 2
-                /*$joins = explode(',', $value['joins']);
-                $tablename = str_replace("'", '', $value['tablename']);
-                $condition1 = str_replace("'", '', $value['cond1']);
-                $condition2 = str_replace("'", '', $value['cond2']);
-                $returndata = $returndata->$join_type($tablename,$condition1,$condition2)->toSql();*/
+            if($request->filled('union_table') && $request->filled('union_where')) {
+                $returndata1 = DB::table($input['union_table']);
+                $where_union = json_decode($input['union_where'],true);
+                $returndata1->where($where_union);
+                $returndata = $returndata->union($returndata1);
 
-                //test 1
-                /*$joins = explode(', ', $input['joins']);
-                $returndata = $returndata->$join_type($joins[0],$joins[1],$joins[2]);*/
             }
 
             if($request->filled('groupby')) {
                 $returndata = $returndata->groupBy($input['groupby']);
+
             }
 
             if($request->filled('orderby')) {
                 $returndata = $returndata->orderByRaw($input['orderby']);
+
             }
 
             if($request->filled('fields')) {
                 $returndata = $returndata->selectRaw($input['fields']);
+
             }
 
             if($request->filled('page')) {
-
                 $page = $input['page'];
-                $perpage = 10;
-                $calc  = $perpage * $page;
-                $start = $calc - $perpage;
-                $returndata = $returndata->skip($start)->take($perpage)->get();
-                $next = "false";
-                $message = $tableName.' '.'list.';
-                $jsonResponse = General::jsonResponse(1,$input['message'],$returndata,$next,'','form');
+                if(!$request->filled('limit')){
+                    $input['limit'] = 10 ;
+
+                }
+
+                $returndata = $returndata->paginate($input['limit'])->toArray();  
+                if($returndata['last_page'] == $input['page']){
+                    $next = "false";
+
+                }else{
+                    $next = "true";
+
+                }
+                $jsonResponse = General::jsonResponse(1,$input['message'],$returndata['data'],$next,'','form');
                 return $jsonResponse;
 
             }else{
@@ -147,7 +146,6 @@ class ApiController extends Controller
                     $returndata = $returndata->last();
                 }
 
-                $message = $tableName.' '.'list.';
                 $jsonResponse =  General::jsonResponse(1,$input['message'],$returndata);
                 return $jsonResponse;
             }
@@ -160,7 +158,6 @@ class ApiController extends Controller
             $where = json_decode($input['where'],true);
             $returndata = DB::table($table);
             $returndata = $returndata->where($where[0])->get()->first();
-            $message = $tableName.' '.'detail.';
             $jsonResponse =  General::jsonResponse(1,$input['message'],$returndata);
             return $jsonResponse;
 
@@ -179,7 +176,6 @@ class ApiController extends Controller
                     $i++ ;
                 }
 
-                $message = $tableName.' '.'has been deleted successfully.';
                 $jsonResponse = General::jsonResponse(0,$input['message'],[]);
                 return $jsonResponse;
 
