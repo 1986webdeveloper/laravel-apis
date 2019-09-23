@@ -30,6 +30,7 @@ class UserApiRequest extends FormRequest
         return [
             'action' => 'required',
             'table_name' => 'required',
+            'message' => 'required',
         ];
     }
 
@@ -42,8 +43,8 @@ class UserApiRequest extends FormRequest
     {
         return [
             'action.required' => 'Please enter action',
-            'table_name.required' => 'Please enter table name.'
-            
+            'table_name.required' => 'Please enter table name.',
+            'message.required' => 'Please enter message.'
         ];
     }
     protected function failedValidation(Validator $validator)
