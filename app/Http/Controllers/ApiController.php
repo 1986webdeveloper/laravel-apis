@@ -26,19 +26,18 @@ class ApiController extends Controller
     public function crud_manage(UserApiRequest $request){
 
         $input = $request->all();
-        $tableName = ucfirst(mb_substr($input['table_name'], 0, -1));
         $table = $input['table_name'];
 
         switch ($input['action']) {
 
         case 'add':
 
-            $input = json_decode($input['parameters'],true);
+            $inputs = json_decode($input['parameters'],true);
             $userdetail = array();
             $returndata = DB::table($table);
-            $returndata = $returndata->insert($input);
+            $returndata = $returndata->insert($inputs);
             $userdetail[] = $returndata;
-            $jsonResponse =  General::jsonResponse(1,$input['message'],$userdetail);
+            $jsonResponse =  General::jsonResponse(1,$input['message'],[]);
             return $jsonResponse;
 
         break;
@@ -57,9 +56,9 @@ class ApiController extends Controller
                 $userdetail[] = $returndata;
                 $i++ ;
             }
-
-            $jsonResponse =  General::jsonResponse(1,$input['message'],$userdetail);
+            $jsonResponse =  General::jsonResponse(1,$input['message'],array());
             return $jsonResponse;
+
 
         break;
 
@@ -67,12 +66,14 @@ class ApiController extends Controller
 
             $userdetail = array();
             $returndata = DB::table($table);
+
             if($request->filled('where')) {
+
                 $where = json_decode($input['where'],true);
-                $returndata->where($where);
-                
+                $type = isset($where[0]['type']) ? $where[0]['type'] : 'where';
+                $returndata = $this->whereQuery($type,$returndata,$where);
             }
-         
+
             if($request->filled('joins')) {
                 $joins = json_decode($input['joins'],true);
                 foreach ($joins as $key => $row) {
@@ -80,7 +81,6 @@ class ApiController extends Controller
                     $returndata->$type($row['tablename'],$row['cond1'],$row['cond2']);
 
                 }
-                
             }
 
             if($request->filled('union_table') && $request->filled('union_where')) {
@@ -88,39 +88,35 @@ class ApiController extends Controller
                 $where_union = json_decode($input['union_where'],true);
                 $returndata1->where($where_union);
                 $returndata = $returndata->union($returndata1);
-
             }
 
             if($request->filled('groupby')) {
                 $returndata = $returndata->groupBy($input['groupby']);
-
             }
 
             if($request->filled('orderby')) {
                 $returndata = $returndata->orderByRaw($input['orderby']);
-
             }
 
             if($request->filled('fields')) {
                 $returndata = $returndata->selectRaw($input['fields']);
-
             }
 
             if($request->filled('page')) {
+
                 $page = $input['page'];
                 if(!$request->filled('limit')){
                     $input['limit'] = 10 ;
 
                 }
 
-                $returndata = $returndata->paginate($input['limit'])->toArray();  
+                $returndata = $returndata->paginate($input['limit'])->toArray();
                 if($returndata['last_page'] == $input['page']){
                     $next = "false";
-
                 }else{
                     $next = "true";
-
                 }
+
                 $jsonResponse = General::jsonResponse(1,$input['message'],$returndata['data'],$next,'','form');
                 return $jsonResponse;
 
@@ -154,35 +150,93 @@ class ApiController extends Controller
 
         case 'view':
 
-
             $where = json_decode($input['where'],true);
             $returndata = DB::table($table);
             $returndata = $returndata->where($where[0])->get()->first();
             $jsonResponse =  General::jsonResponse(1,$input['message'],$returndata);
             return $jsonResponse;
 
-
         break;
 
         case 'delete':
 
-                $where = json_decode($input['where'],true);
-                $inputs = json_decode($input['parameters'],true);
-                $i = 0;
-                foreach ($inputs as $key => $value) {
-                    $returndata = DB::table($table);
-                    $returndata = $returndata->where("id", $where[$i]['id']);
-                    $returndata = $returndata->update($value);
-                    $i++ ;
-                }
+            $where = json_decode($input['where'],true);
+            $inputs = json_decode($input['parameters'],true);
+            $i = 0;
+            foreach ($inputs as $key => $value) {
+                $returndata = DB::table($table);
+                $returndata = $returndata->where("id", $where[$i]['id']);
+                $returndata = $returndata->update($value);
+                $i++ ;
+            }
 
-                $jsonResponse = General::jsonResponse(0,$input['message'],[]);
-                return $jsonResponse;
-
+            $jsonResponse = General::jsonResponse(0,$input['message'],[]);
+            return $jsonResponse;
 
         break;
+
         }
+    }
 
+    public function whereQuery($type,$returndata,$where){
 
+        switch ($type) {
+
+            case 'whereBetween'://[{ "type" : "whereBetween"},["id",[1, 100]]]
+            case 'whereNotBetween'://[{ "type" : "whereNotBetween"},["id",[1, 100]]]
+            case 'whereIn'://[{ "type" : "whereIn"},["id",[51, 54, 62]]]
+            case 'whereNotIn'://[{ "type" : "whereNotIn"},["id",[51, 54, 62]]]
+            case 'whereDate'://[{ "type" : "whereDate"},["created_at","2019-09-16"]]
+            case 'whereMonth'://[{ "type" : "whereMonth"},["created_at","08"]]
+            case 'whereDay'://[{ "type" : "whereDay"},["created_at","08"]]
+            case 'whereYear'://[{ "type" : "whereYear"},["created_at","2019"]]
+                $returndata->$type($where[1][0],$where[1][1]);
+            break;
+
+            case 'whereNull'://[{ "type" : "whereNull"},["id"]]
+            case 'whereNotNull'://[{ "type" : "whereNotNull"},["id"]]
+                $returndata->$type($where[1][0]);
+            break;
+
+            case 'whereTime'://[{ "type" : "whereTime"},["created_at",">=","04:00:00"]]
+                $returndata->whereTime($where[1][0],$where[1][1],$where[1][2]);
+            break;
+
+            case 'orWhere'://[{ "type" : "orWhere"},["created_at","08"]]
+                unset($where[0]);
+                $returndata->orWhere($where);
+            break;
+
+            /*[{ "type" : "multiple"},
+                [{ "type" : "where"},["id",">=","50"],["id","<","55"]],
+                [{ "type" : "orWhere"},["id","62"]],
+                [{ "type" : "orWhere"},["created_at","08"]]
+            ]*/
+            case 'multiple':
+                foreach (array_slice($where,1) as $key => $conditions) {
+                    $type = isset($conditions[0]['type']) ? $conditions[0]['type'] : 'where';
+                    $returndata = $this->whereQuery($type,$returndata,$conditions);
+                }
+            break;
+
+            case 'where1'://[{ "type" : "where1"},[["id",">=","50"],["id","<","55"]]] || [{ "type" : "where1"},[["id",">=","50"]]]
+                $returndata->whereColumn($where[1]);
+            break;
+
+            case 'where2'://[{ "type" : "where2"},["first_name","last_name"]]
+                $returndata->whereColumn($where[1][0],$where[1][1]);
+            break;
+
+            case 'where3'://[{ "type" : "where3"},["id","<","55"]]
+                $returndata->whereColumn($where[1][0],$where[1][1],$where[1][2]);
+            break;
+
+            case 'where'://[{ "type" : "where"},["id",">=","50"],["id","<","55"]] || [["id","<","55"]]
+                if(isset($where[0]['type']))
+                    unset($where[0]);
+                $returndata->where($where);
+            break;
+        }
+        return $returndata;
     }
 }

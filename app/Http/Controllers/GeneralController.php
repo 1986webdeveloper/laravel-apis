@@ -13,8 +13,7 @@ class GeneralController extends Controller
     }
 
     public static function jsonResponse($status, $message, $data ='', $next=null, $jwt_token=null,$type='form'){
-
-        //DAta Empty Then SEt Object Type DEfault Array 
+        //DAta Empty Then SEt Object Type DEfault Array
         if(empty($data) || $data == ''){
             $data = (object)array();
         }
@@ -39,7 +38,7 @@ class GeneralController extends Controller
                     ], 200);
         }
         elseif($jwt_token==null && $type =='datelist-form' && $next != null){
-           
+
             return response()->json([
                 "meta" => [
                     "status" => $status,
@@ -59,7 +58,7 @@ class GeneralController extends Controller
                     ], 200);
         }
         elseif($jwt_token==null && $type =='front_form' && $next != null){
-            
+
             return response()->json([
                 "meta" => [
                     "status" => $status,
@@ -91,13 +90,13 @@ class GeneralController extends Controller
                 "meta" => [
                     "status" => $status,
                     "message" => $message,
-                ],                
+                ],
                 "data" => $data,
                 "jwtToken" => $jwt_token
                     ], 200);
         }
     }
-    
+
     public static function upload_file($file, $file_name, $folder_name, $new_name = "") {
         if (!empty($file)) {
             ini_set('upload_max_filesize', '100M');
