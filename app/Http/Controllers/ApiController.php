@@ -32,6 +32,12 @@ class ApiController extends Controller
 
         case 'add':
 
+            if($request->filled('sql_query')) {
+                DB::insert($input['sql_query']);
+                $jsonResponse =  General::jsonResponse(1,$input['message'],[]);
+                return $jsonResponse;
+            }
+
             $inputs = json_decode($input['parameters'],true);
             $userdetail = array();
             $returndata = DB::table($table);
@@ -43,6 +49,12 @@ class ApiController extends Controller
         break;
 
         case 'edit':
+
+            if($request->filled('sql_query')) {
+                DB::update($input['sql_query']);
+                $jsonResponse = General::jsonResponse(1,$input['message'],array());
+                return $jsonResponse;
+            }
 
             $where = json_decode($input['where'],true);
             $inputs = json_decode($input['parameters'],true);
@@ -56,7 +68,7 @@ class ApiController extends Controller
                 $userdetail[] = $returndata;
                 $i++ ;
             }
-            $jsonResponse =  General::jsonResponse(1,$input['message'],array());
+            $jsonResponse = General::jsonResponse(1,$input['message'],array());
             return $jsonResponse;
 
 
@@ -67,6 +79,11 @@ class ApiController extends Controller
             $userdetail = array();
             $returndata = DB::table($table);
 
+            if($request->filled('sql_query')) {
+                $returndata = DB::select($input['sql_query']);
+                $jsonResponse =  General::jsonResponse(1,$input['message'],$returndata);
+                return $jsonResponse;
+            }
             if($request->filled('where')) {
 
                 $where = json_decode($input['where'],true);
@@ -79,7 +96,6 @@ class ApiController extends Controller
                 foreach ($joins as $key => $row) {
                     $type = $row['type'];
                     $returndata->$type($row['tablename'],$row['cond1'],$row['cond2']);
-
                 }
             }
 
@@ -107,7 +123,6 @@ class ApiController extends Controller
                 $page = $input['page'];
                 if(!$request->filled('limit')){
                     $input['limit'] = 10 ;
-
                 }
 
                 $returndata = $returndata->paginate($input['limit'])->toArray();
@@ -159,6 +174,12 @@ class ApiController extends Controller
         break;
 
         case 'delete':
+
+            if($request->filled('sql_query')) {
+                DB::delete($input['sql_query']);
+                $jsonResponse = General::jsonResponse(0,$input['message'],[]);
+                return $jsonResponse;
+            }
 
             $where = json_decode($input['where'],true);
             $inputs = json_decode($input['parameters'],true);
