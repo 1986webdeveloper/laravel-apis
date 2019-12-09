@@ -174,6 +174,8 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        qoraiche\mailEclipse\mailEclipseServiceProvider::class,
+        Edujugon\PushNotification\Providers\PushNotificationServiceProvider::class,
 
     ],
 

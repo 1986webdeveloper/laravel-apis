@@ -18,3 +18,5 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::post('/crud_manage', 'ApiController@crud_manage');
+Route::post('/sendMail', 'SendMailController@sendMailApi'); 
+Route::post('/sendPushNotification', 'SendPushNotificationController@sendPushNotificationApi'); 

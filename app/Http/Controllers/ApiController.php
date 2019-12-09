@@ -156,7 +156,6 @@ class ApiController extends Controller
                 }else if($request->filled('get_last')) {
                     $returndata = $returndata->last();
                 }
-
                 $jsonResponse =  General::jsonResponse(1,$input['message'],$returndata);
                 return $jsonResponse;
             }
