@@ -122,18 +122,17 @@ class GeneralController extends Controller
         }
     }
 
-      public static function date_mysql_format($date, $format = "m/d/Y") {
-    if ($date == "" || $date == "00-00-0000") {
-        return "";
+    public static function date_mysql_format($date, $format = "m/d/Y") {
+        if ($date == "" || $date == "00-00-0000") {
+            return "";
+        }
+        if ($format == 'd/m/Y') {
+            return date('Y-m-d', strtotime(preg_replace('/(\d{2})\/(\d{2})\/(\d{4})/', '$3-$2-$1', $date)));
+        } else if ($format == 'm/d/Y') {
+            return date('Y-m-d', strtotime(preg_replace('/(\d{2})\/(\d{2})\/(\d{4})/', '$3-$1-$2', $date)));
+        } else if ($format == 'Y/m/d') {
+            return date('Y-m-d', strtotime(preg_replace('/(\d{4})\/(\d{2})\/(\d{2})/', '$1-$2-$3', $date)));
+        }
+        return date('Y-m-d', strtotime($date));
     }
-    if ($format == 'd/m/Y') {
-        return date('Y-m-d', strtotime(preg_replace('/(\d{2})\/(\d{2})\/(\d{4})/', '$3-$2-$1', $date)));
-    } else if ($format == 'm/d/Y') {
-        return date('Y-m-d', strtotime(preg_replace('/(\d{2})\/(\d{2})\/(\d{4})/', '$3-$1-$2', $date)));
-    } else if ($format == 'Y/m/d') {
-        return date('Y-m-d', strtotime(preg_replace('/(\d{4})\/(\d{2})\/(\d{2})/', '$1-$2-$3', $date)));
-    }
-    return date('Y-m-d', strtotime($date));
-  }
-
 }
